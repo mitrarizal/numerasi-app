@@ -1,4 +1,4 @@
-package com.game.sos;
+package com.numerasiapp;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;

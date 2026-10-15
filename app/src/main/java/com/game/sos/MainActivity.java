@@ -31,7 +31,10 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private AdView adView;
     private InterstitialAd interstitialAd;
+    private AppOpenAd appOpenAd;
     private ProgressBar progressBar;
+
+    private boolean isShowingAppOpenAd = false;
 
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
     private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
@@ -40,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. UBAH WARNA WINDOW UTAMA AGAR TIDAK ADA KEBOCORAN LAYAR PUTIH
+        // 1. Mencegah layar putih saat transisi
         getWindow().getDecorView().setBackgroundColor(Color.parseColor("#0f172a"));
 
         setContentView(R.layout.activity_main);
@@ -59,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webview);
 
-        // Atur background WebView transparan/gelap
         webView.setBackgroundColor(Color.parseColor("#0f172a"));
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
@@ -119,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
         webView.loadUrl("https://gamenumerasi.blogspot.com");
     }
 
+    // --- 1. APP OPEN AD ---
     private void loadAppOpenAd() {
         AdRequest request = new AdRequest.Builder().build();
         AppOpenAd.load(
@@ -126,7 +129,8 @@ public class MainActivity extends AppCompatActivity {
             new AppOpenAd.AppOpenAdLoadCallback() {
                 @Override
                 public void onAdLoaded(@NonNull AppOpenAd ad) {
-                    ad.show(MainActivity.this);
+                    appOpenAd = ad;
+                    showAppOpenAdIfAvailable();
                 }
 
                 @Override
@@ -137,6 +141,52 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+    private void showAppOpenAdIfAvailable() {
+        if (!isShowingAppOpenAd && appOpenAd != null && !isFinishing() && !isDestroyed()) {
+            appOpenAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    isShowingAppOpenAd = true;
+                    // Pause WebView agar game tidak jalan di balik iklan
+                    runOnUiThread(() -> {
+                        if (webView != null) {
+                            webView.onPause();
+                            webView.pauseTimers();
+                        }
+                    });
+                }
+
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    appOpenAd = null;
+                    isShowingAppOpenAd = false;
+                    // Resume WebView setelah iklan ditutup
+                    runOnUiThread(() -> {
+                        if (webView != null) {
+                            webView.onResume();
+                            webView.resumeTimers();
+                        }
+                    });
+                }
+
+                @Override
+                public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                    appOpenAd = null;
+                    isShowingAppOpenAd = false;
+                    runOnUiThread(() -> {
+                        if (webView != null) {
+                            webView.onResume();
+                            webView.resumeTimers();
+                        }
+                    });
+                }
+            });
+
+            appOpenAd.show(MainActivity.this);
+        }
+    }
+
+    // --- 2. INTERSTITIAL AD ---
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, TEST_INTERSTITIAL_ID, adRequest,
@@ -148,7 +198,6 @@ public class MainActivity extends AppCompatActivity {
                     interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                         @Override
                         public void onAdShowedFullScreenContent() {
-                            // 2. PAUSE WEBVIEW SAAT IKLAN MUNCUL AGAR GAME TIDAK ME-RENDER DI BACKGROUND
                             runOnUiThread(() -> {
                                 if (webView != null) {
                                     webView.onPause();
@@ -159,7 +208,6 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void onAdDismissedFullScreenContent() {
-                            // 3. RESUME WEBVIEW SETELAH IKLAN DITUTUP
                             runOnUiThread(() -> {
                                 if (webView != null) {
                                     webView.onResume();

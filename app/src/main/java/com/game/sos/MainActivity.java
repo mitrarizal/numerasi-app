@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                if (url.contains("gamenumerasi.blogspot.com)) {
+                if (url.contains("gamenumerasi.blogspot.com")) {
                     return false;
                 }
                 return true; 

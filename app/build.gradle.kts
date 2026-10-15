@@ -3,15 +3,15 @@ plugins {
 }
 
 android {
-    namespace 'com.numerasiapp'
+    namespace 'com.game.sos'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.numerasiapp"
+        applicationId "com.game.sos"
         minSdk 21
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
     }
 
     buildTypes {

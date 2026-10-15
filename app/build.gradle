@@ -6,6 +6,16 @@ android {
     namespace 'com.numerasiapp'
     compileSdk 34
 
+    // Tambahkan blok signingConfigs di sini
+    signingConfigs {
+        release {
+            storeFile file('release.jks')
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId "com.numerasiapp"
         minSdk 21
@@ -18,8 +28,11 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Hubungkan signingConfig ke release
+            signingConfig signingConfigs.release
         }
     }
+    
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17

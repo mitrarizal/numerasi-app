@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.numerasi'
+    namespace 'com.numerasi-app'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.numerasi"
+        applicationId "com.numerasi-app"
         minSdk 21
         targetSdk 34
         versionCode 1

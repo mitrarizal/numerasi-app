@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
-    // ID Uji Coba Resmi dari Google AdMob
+    // Ganti dengan ID Iklan Asli dari AdMob saat rilis produk
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
     private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
 
@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
 
-        // Optimasi Warna Latar Belakang & Hardware Acceleration (Mencegah Layar Putih)
+        // Optimasi Warna Latar Belakang & Hardware Acceleration
         webView.setBackgroundColor(Color.parseColor("#0f172a")); 
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);    
 
@@ -82,7 +82,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                if (url.contains("gamenumerasi.blogspot.com")) {
+                // Mencakup .com, .co.id, dan redirect regional Blogger lainnya
+                if (url.contains("gamenumerasi.blogspot.")) {
                     return false;
                 }
                 return true; 
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    // --- 2. INTERSTITIAL AD (KHUSUS UNTUK KLIK LEVEL) ---
+    // --- 2. INTERSTITIAL AD ---
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, TEST_INTERSTITIAL_ID, adRequest,
@@ -149,11 +150,9 @@ public class MainActivity extends AppCompatActivity {
                 public void onAdLoaded(@NonNull InterstitialAd ad) {
                     interstitialAd = ad;
                     
-                    // Callback saat iklan selesai atau ditutup
                     interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                         @Override
                         public void onAdDismissedFullScreenContent() {
-                            // Setelah iklan ditutup pemain, kosongkan dan siapkan iklan untuk klik level berikutnya
                             interstitialAd = null;
                             loadInterstitialAd();
                         }
@@ -173,14 +172,13 @@ public class MainActivity extends AppCompatActivity {
             });
     }
 
-    // Dipanggil KHUSUS dari JavaScript saat tombol Level diklik
+    // Dipanggil dari JavaScript Blogspot
     @JavascriptInterface
     public void panggilIklanInterstisial() {
         runOnUiThread(() -> {
             if (interstitialAd != null) {
                 interstitialAd.show(MainActivity.this);
             } else {
-                // Jika iklan belum siap saat diklik, otomatis muat ulang tanpa mengganggu game
                 loadInterstitialAd();
             }
         });
@@ -193,5 +191,33 @@ public class MainActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    // --- MANAGEMENT LIFECYCLE (Mencegah Memory Leak & Crash) ---
+    @Override
+    protected void onPause() {
+        if (adView != null) {
+            adView.pause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (adView != null) {
+            adView.resume();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (adView != null) {
+            adView.destroy();
+        }
+        if (webView != null) {
+            webView.destroy();
+        }
+        super.onDestroy();
     }
 }

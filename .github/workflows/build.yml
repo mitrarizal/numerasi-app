@@ -42,9 +42,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease
 
-      # Bagian path diperbarui menggunakan wildcard *.apk
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-signed
           path: app/build/outputs/apk/release/*.apk
+         

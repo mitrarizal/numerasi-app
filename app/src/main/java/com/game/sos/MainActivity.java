@@ -34,7 +34,11 @@ public class MainActivity extends AppCompatActivity {
     private AppOpenAd appOpenAd;
     private ProgressBar progressBar;
 
-    private boolean isShowingAppOpenAd = false;
+    // --- PENGATURAN KEAMANAN ADMOB ---
+    private boolean isAdShowing = false; // Mencegah 2 iklan muncul bersamaan
+    private int levelClickCounter = 0;   // Menghitung jumlah klik level
+    private static final int AD_CLICK_INTERVAL = 2; // Tampilkan Interstitial setiap 2 kali klik level
+    private long appOpenAdLoadTime = 0;  // Waktu muat App Open Ad (Mencegah iklan kadaluarsa)
 
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
     private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
@@ -43,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. Mencegah layar putih saat transisi
+        // Mencegah kebocoran warna putih saat transisi
         getWindow().getDecorView().setBackgroundColor(Color.parseColor("#0f172a"));
 
         setContentView(R.layout.activity_main);
@@ -61,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         webView = findViewById(R.id.webview);
-
         webView.setBackgroundColor(Color.parseColor("#0f172a"));
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
@@ -130,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onAdLoaded(@NonNull AppOpenAd ad) {
                     appOpenAd = ad;
+                    appOpenAdLoadTime = System.currentTimeMillis();
                     showAppOpenAdIfAvailable();
                 }
 
@@ -141,44 +145,33 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+    private boolean isAppOpenAdExpired() {
+        // Iklan App Open kadaluarsa setelah 4 jam sesuai aturan AdMob
+        long dateDifference = System.currentTimeMillis() - appOpenAdLoadTime;
+        return dateDifference > (3600000 * 4);
+    }
+
     private void showAppOpenAdIfAvailable() {
-        if (!isShowingAppOpenAd && appOpenAd != null && !isFinishing() && !isDestroyed()) {
+        if (!isAdShowing && appOpenAd != null && !isAppOpenAdExpired() && !isFinishing() && !isDestroyed()) {
             appOpenAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                 @Override
                 public void onAdShowedFullScreenContent() {
-                    isShowingAppOpenAd = true;
-                    // Pause WebView agar game tidak jalan di balik iklan
-                    runOnUiThread(() -> {
-                        if (webView != null) {
-                            webView.onPause();
-                            webView.pauseTimers();
-                        }
-                    });
+                    isAdShowing = true;
+                    pauseWebView();
                 }
 
                 @Override
                 public void onAdDismissedFullScreenContent() {
                     appOpenAd = null;
-                    isShowingAppOpenAd = false;
-                    // Resume WebView setelah iklan ditutup
-                    runOnUiThread(() -> {
-                        if (webView != null) {
-                            webView.onResume();
-                            webView.resumeTimers();
-                        }
-                    });
+                    isAdShowing = false;
+                    resumeWebView();
                 }
 
                 @Override
                 public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
                     appOpenAd = null;
-                    isShowingAppOpenAd = false;
-                    runOnUiThread(() -> {
-                        if (webView != null) {
-                            webView.onResume();
-                            webView.resumeTimers();
-                        }
-                    });
+                    isAdShowing = false;
+                    resumeWebView();
                 }
             });
 
@@ -186,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- 2. INTERSTITIAL AD ---
+    // --- 2. INTERSTITIAL AD (KHUSUS UNTUK KLIK LEVEL) ---
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, TEST_INTERSTITIAL_ID, adRequest,
@@ -198,34 +191,22 @@ public class MainActivity extends AppCompatActivity {
                     interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                         @Override
                         public void onAdShowedFullScreenContent() {
-                            runOnUiThread(() -> {
-                                if (webView != null) {
-                                    webView.onPause();
-                                    webView.pauseTimers();
-                                }
-                            });
+                            isAdShowing = true;
+                            pauseWebView();
                         }
 
                         @Override
                         public void onAdDismissedFullScreenContent() {
-                            runOnUiThread(() -> {
-                                if (webView != null) {
-                                    webView.onResume();
-                                    webView.resumeTimers();
-                                }
-                            });
+                            isAdShowing = false;
+                            resumeWebView();
                             interstitialAd = null;
                             loadInterstitialAd();
                         }
 
                         @Override
                         public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
-                            runOnUiThread(() -> {
-                                if (webView != null) {
-                                    webView.onResume();
-                                    webView.resumeTimers();
-                                }
-                            });
+                            isAdShowing = false;
+                            resumeWebView();
                             interstitialAd = null;
                             loadInterstitialAd();
                         }
@@ -239,33 +220,48 @@ public class MainActivity extends AppCompatActivity {
             });
     }
 
+    // Dipanggil dari JS saat tombol level diklik
     @JavascriptInterface
     public void panggilIklanInterstisial() {
         runOnUiThread(() -> {
-            if (interstitialAd != null) {
-                interstitialAd.show(MainActivity.this);
-            } else {
-                loadInterstitialAd();
+            levelClickCounter++;
+
+            // Hanya tampilkan jika memenuhi kriteria jeda klik dan tidak ada iklan lain yang tampil
+            if (levelClickCounter % AD_CLICK_INTERVAL == 0) {
+                if (interstitialAd != null && !isAdShowing) {
+                    interstitialAd.show(MainActivity.this);
+                } else {
+                    loadInterstitialAd();
+                }
             }
         });
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
+    // --- FUNGSI KONTROL WEBVIEW ---
+    private void pauseWebView() {
         if (webView != null) {
             webView.onPause();
             webView.pauseTimers();
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+    private void resumeWebView() {
         if (webView != null) {
             webView.onResume();
             webView.resumeTimers();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pauseWebView();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        resumeWebView();
     }
 
     @Override

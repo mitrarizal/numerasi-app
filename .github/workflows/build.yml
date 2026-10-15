@@ -24,26 +24,19 @@ jobs:
         with:
           gradle-version: '8.5'
 
-      - name: Decode Fixed Keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          python3 -c "
-          import os, base64
-          raw = os.environ.get('KEYSTORE_BASE64', '').strip()
-          with open('app/release.jks', 'wb') as f:
-              f.write(base64.b64decode(raw))
-          "
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
 
-      - name: Build Release AAB
+      - name: Build Release APK
         env:
+          KEYSTORE_FILE_PATH: "keystore.jks"
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease
 
-      - name: Upload Signed AAB
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-bundle
-          path: app/build/outputs/apk/release/app-release.apk
+          name: app-release-apk
+          path: app/build/outputs/apk/release/*.apk

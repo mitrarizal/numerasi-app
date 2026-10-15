@@ -34,12 +34,12 @@ public class MainActivity extends AppCompatActivity {
     private AppOpenAd appOpenAd;
     private ProgressBar progressBar;
 
-    // --- PENGATURAN KEAMANAN ADMOB ---
-    private boolean isAdShowing = false; // Mencegah 2 iklan muncul bersamaan
-    private int levelClickCounter = 0;   // Menghitung jumlah klik level
-    private static final int AD_CLICK_INTERVAL = 2; // Tampilkan Interstitial setiap 2 kali klik level
-    private long appOpenAdLoadTime = 0;  // Waktu muat App Open Ad (Mencegah iklan kadaluarsa)
+    // --- PENGATURAN KEAMANAN & FREKUENSI IKLAN ---
+    private boolean isAdShowing = false; 
+    private int levelClickCounter = 0;   
+    private static final int AD_CLICK_INTERVAL = 2; // Iklan Interstitial hanya muncul setiap 2 kali klik level
 
+    // ID Uji Coba Resmi Google AdMob (Ganti ke ID Asli HANYA saat Rilis di Play Store)
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
     private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
 
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Mencegah kebocoran warna putih saat transisi
+        // Mencegah kebocoran layar putih saat transisi
         getWindow().getDecorView().setBackgroundColor(Color.parseColor("#0f172a"));
 
         setContentView(R.layout.activity_main);
@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
                 if (url.contains("gamenumerasi.blogspot.com")) {
                     return false;
                 }
-                return true;
+                return true; 
             }
 
             @Override
@@ -133,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onAdLoaded(@NonNull AppOpenAd ad) {
                     appOpenAd = ad;
-                    appOpenAdLoadTime = System.currentTimeMillis();
                     showAppOpenAdIfAvailable();
                 }
 
@@ -145,14 +144,8 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    private boolean isAppOpenAdExpired() {
-        // Iklan App Open kadaluarsa setelah 4 jam sesuai aturan AdMob
-        long dateDifference = System.currentTimeMillis() - appOpenAdLoadTime;
-        return dateDifference > (3600000 * 4);
-    }
-
     private void showAppOpenAdIfAvailable() {
-        if (!isAdShowing && appOpenAd != null && !isAppOpenAdExpired() && !isFinishing() && !isDestroyed()) {
+        if (!isAdShowing && appOpenAd != null && !isFinishing() && !isDestroyed()) {
             appOpenAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                 @Override
                 public void onAdShowedFullScreenContent() {
@@ -179,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- 2. INTERSTITIAL AD (KHUSUS UNTUK KLIK LEVEL) ---
+    // --- 2. INTERSTITIAL AD ---
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, TEST_INTERSTITIAL_ID, adRequest,
@@ -220,13 +213,12 @@ public class MainActivity extends AppCompatActivity {
             });
     }
 
-    // Dipanggil dari JS saat tombol level diklik
     @JavascriptInterface
     public void panggilIklanInterstisial() {
         runOnUiThread(() -> {
             levelClickCounter++;
 
-            // Hanya tampilkan jika memenuhi kriteria jeda klik dan tidak ada iklan lain yang tampil
+            // Mencegah penayangan iklan berlebihan (Cukup setiap 2x klik level)
             if (levelClickCounter % AD_CLICK_INTERVAL == 0) {
                 if (interstitialAd != null && !isAdShowing) {
                     interstitialAd.show(MainActivity.this);
@@ -237,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // --- FUNGSI KONTROL WEBVIEW ---
+    // --- PENGELOLAAN RESOURCE WEBVIEW ---
     private void pauseWebView() {
         if (webView != null) {
             webView.onPause();

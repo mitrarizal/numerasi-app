@@ -2,6 +2,7 @@ package com.numerasiapp;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private AdView adView;
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
+    private boolean isAppOpenAdShown = false; // Mencegah AppOpenAd mengganggu jalannya game
 
     // ID Iklan Uji Coba AdMob
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
@@ -44,13 +46,13 @@ public class MainActivity extends AppCompatActivity {
 
         progressBar = findViewById(R.id.progressBar);
 
-        // 1. Inisialisasi SDK AdMob & Preload Iklan
+        // 1. Inisialisasi SDK AdMob
         MobileAds.initialize(this, initializationStatus -> {
-            loadAppOpenAd();      // Iklan saat pertama kali dibuka
-            loadInterstitialAd(); // Preload iklan untuk diklik di menu level
+            loadAppOpenAd();      
+            loadInterstitialAd(); 
         });
 
-        // 2. Banner Ad (Tampil di bagian bawah)
+        // 2. Banner Ad
         adView = findViewById(R.id.adView);
         if (adView != null) {
             adView.loadAd(new AdRequest.Builder().build());
@@ -59,9 +61,10 @@ public class MainActivity extends AppCompatActivity {
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
 
-        // Kunci warna latar belakang WebView ke warna gelap game (#0b0f19)
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        
+        // PERBAIKAN: Gunakan LAYER_TYPE_SOFTWARE agar Canvas Confetti & WebView tidak crash GPU
+        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -72,16 +75,16 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setUseWideViewPort(true);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        
-        // Memastikan audio efek game dapat diputar tanpa hambatan gestur
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
-        // Menghubungkan JavaScript Blogspot ke Java Android
-        webView.addJavascriptInterface(this, "AndroidApp");
+        // PERBAIKAN: Izinkan pemuatan skrip JS eksternal (CDN)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
 
+        webView.addJavascriptInterface(this, "AndroidApp");
         webView.setWebChromeClient(new WebChromeClient());
 
-        // WebViewClient gabungan (Url Loading, ProgressBar, Offline handling)
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -116,9 +119,19 @@ public class MainActivity extends AppCompatActivity {
                             + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
                             + "img{max-width:80%;height:auto;}</style></head>"
                             + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
-                    
                     view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
                 }
+            }
+
+            // PERBAIKAN: Pemulihan otomatis jika proses renderer WebView mengalami crash
+            @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                if (webView != null) {
+                    webView.destroy();
+                    webView = null;
+                }
+                recreate();
+                return true;
             }
         });
 
@@ -127,13 +140,17 @@ public class MainActivity extends AppCompatActivity {
 
     // --- 1. APP OPEN AD ---
     private void loadAppOpenAd() {
+        if (isAppOpenAdShown) return;
+
         AdRequest request = new AdRequest.Builder().build();
         AppOpenAd.load(
             this, TEST_APP_OPEN_ID, request,
             new AppOpenAd.AppOpenAdLoadCallback() {
                 @Override
                 public void onAdLoaded(@NonNull AppOpenAd ad) {
-                    if (!isFinishing() && !isDestroyed()) {
+                    // Hanya muncul sekali di awal aplikasi dibuka, tidak akan mengganggu saat permainan berjalan
+                    if (!isFinishing() && !isDestroyed() && !isAppOpenAdShown) {
+                        isAppOpenAdShown = true;
                         ad.show(MainActivity.this);
                     }
                 }
@@ -200,7 +217,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- MANAGEMENT LIFECYCLE ---
     @Override
     protected void onPause() {
         if (adView != null) {

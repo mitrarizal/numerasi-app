@@ -23,7 +23,6 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.appopen.AppOpenAd;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 
@@ -33,10 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private AdView adView;
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
-    private boolean isAppOpenAdShown = false; // Mencegah AppOpenAd mengganggu jalannya game
 
     // ID Iklan Uji Coba AdMob
-    private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
     private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
 
     @Override
@@ -48,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
 
         // 1. Inisialisasi SDK AdMob
         MobileAds.initialize(this, initializationStatus -> {
-            loadAppOpenAd();      
             loadInterstitialAd(); 
         });
 
@@ -138,32 +134,7 @@ public class MainActivity extends AppCompatActivity {
         webView.loadUrl("https://gamenumerasi.blogspot.com");
     }
 
-    // --- 1. APP OPEN AD ---
-    private void loadAppOpenAd() {
-        if (isAppOpenAdShown) return;
-
-        AdRequest request = new AdRequest.Builder().build();
-        AppOpenAd.load(
-            this, TEST_APP_OPEN_ID, request,
-            new AppOpenAd.AppOpenAdLoadCallback() {
-                @Override
-                public void onAdLoaded(@NonNull AppOpenAd ad) {
-                    // Hanya muncul sekali di awal aplikasi dibuka, tidak akan mengganggu saat permainan berjalan
-                    if (!isFinishing() && !isDestroyed() && !isAppOpenAdShown) {
-                        isAppOpenAdShown = true;
-                        ad.show(MainActivity.this);
-                    }
-                }
-
-                @Override
-                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                    Log.e("AdMob", "App Open Ad gagal dimuat: " + loadAdError.getMessage());
-                }
-            }
-        );
-    }
-
-    // --- 2. INTERSTITIAL AD ---
+    // --- INTERSTITIAL AD ---
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, TEST_INTERSTITIAL_ID, adRequest,

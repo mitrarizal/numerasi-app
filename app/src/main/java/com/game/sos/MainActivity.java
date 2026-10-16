@@ -63,8 +63,8 @@ public class MainActivity extends AppCompatActivity {
 
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
         
-        // PERBAIKAN: Gunakan LAYER_TYPE_SOFTWARE agar Canvas Confetti & WebView tidak crash GPU
-        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        // Ganti LAYER_TYPE_SOFTWARE menjadi LAYER_TYPE_NONE
+        webView.setLayerType(View.LAYER_TYPE_NONE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);

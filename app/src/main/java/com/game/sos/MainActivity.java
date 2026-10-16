@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -14,6 +13,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -33,8 +33,11 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
-    // ID Iklan Uji Coba AdMob
-    private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-6983364109428063/3679555743";
+    // Status loading untuk mencegah multiple request ke AdMob
+    private boolean isInterstitialLoading = false;
+
+    // ID Unit Iklan Interstitial
+    private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
         
-        // PERBAIKAN: Gunakan LAYER_TYPE_SOFTWARE agar Canvas Confetti & WebView tidak crash GPU
+        // Gunakan LAYER_TYPE_SOFTWARE agar Canvas Confetti & WebView tidak crash GPU
         webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         WebSettings webSettings = webView.getSettings();
@@ -73,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
-        // PERBAIKAN: Izinkan pemuatan skrip JS eksternal (CDN)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
@@ -119,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            // PERBAIKAN: Pemulihan otomatis jika proses renderer WebView mengalami crash
+            // Pemulihan otomatis jika proses renderer WebView mengalami crash
             @Override
             public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
                 if (webView != null) {
@@ -132,16 +134,34 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.loadUrl("https://gamenumerasi.blogspot.com");
+
+        // Penanganan Tombol Kembali Modern (Android X)
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    finish();
+                }
+            }
+        });
     }
 
-    // --- INTERSTITIAL AD ---
+    // --- LOGIKA IKLAN INTERSTITIAL ---
     private void loadInterstitialAd() {
+        if (isInterstitialLoading || interstitialAd != null) {
+            return;
+        }
+        isInterstitialLoading = true;
+
         AdRequest adRequest = new AdRequest.Builder().build();
-        InterstitialAd.load(this, TEST_INTERSTITIAL_ID, adRequest,
+        InterstitialAd.load(this, INTERSTITIAL_AD_UNIT_ID, adRequest,
             new InterstitialAdLoadCallback() {
                 @Override
                 public void onAdLoaded(@NonNull InterstitialAd ad) {
                     interstitialAd = ad;
+                    isInterstitialLoading = false;
                     
                     interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                         @Override
@@ -161,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                     interstitialAd = null;
+                    isInterstitialLoading = false;
                 }
             });
     }
@@ -180,18 +201,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
     protected void onPause() {
         if (adView != null) {
             adView.pause();
+        }
+        if (webView != null) {
+            webView.onPause();
         }
         super.onPause();
     }
@@ -201,6 +216,9 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (adView != null) {
             adView.resume();
+        }
+        if (webView != null) {
+            webView.onResume();
         }
     }
 

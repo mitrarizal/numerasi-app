@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
     id 'com.google.gms.google-services'
 }
 
@@ -44,13 +43,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'com.google.android.gms:play-services-ads:23.0.0'
 
-    // Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:35.0.1')
+    // Firebase BoM v32.8.0 (Aman untuk Java murni)
+    implementation platform('com.google.firebase:firebase-bom:32.8.0')
     implementation 'com.google.firebase:firebase-analytics'
-
-    // Kotlin Runtime & DataStore
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
-    implementation 'androidx.datastore:datastore-preferences:1.1.1'
-    implementation 'androidx.datastore:datastore-preferences-core:1.1.1'
-    implementation 'androidx.datastore:datastore-core:1.1.1'
 }

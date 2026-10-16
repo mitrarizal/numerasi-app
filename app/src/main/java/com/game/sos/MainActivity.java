@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
-    // Ganti dengan ID Iklan Asli dari AdMob saat rilis produk
+    // ID Iklan Uji Coba AdMob
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/9257395921";
     private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
 
@@ -72,13 +72,16 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setUseWideViewPort(true);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        
+        // Memastikan audio efek game dapat diputar tanpa hambatan gestur
+        webSettings.setMediaPlaybackRequiresUserGesture(false);
 
         // Menghubungkan JavaScript Blogspot ke Java Android
         webView.addJavascriptInterface(this, "AndroidApp");
 
         webView.setWebChromeClient(new WebChromeClient());
 
-        // Tunggal WebViewClient (Menggabungkan kontrol URL, ProgressBar, dan Halaman Error Offline)
+        // WebViewClient gabungan (Url Loading, ProgressBar, Offline handling)
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -130,7 +133,9 @@ public class MainActivity extends AppCompatActivity {
             new AppOpenAd.AppOpenAdLoadCallback() {
                 @Override
                 public void onAdLoaded(@NonNull AppOpenAd ad) {
-                    ad.show(MainActivity.this);
+                    if (!isFinishing() && !isDestroyed()) {
+                        ad.show(MainActivity.this);
+                    }
                 }
 
                 @Override
@@ -176,10 +181,12 @@ public class MainActivity extends AppCompatActivity {
     @JavascriptInterface
     public void panggilIklanInterstisial() {
         runOnUiThread(() -> {
-            if (interstitialAd != null) {
-                interstitialAd.show(MainActivity.this);
-            } else {
-                loadInterstitialAd();
+            if (!isFinishing() && !isDestroyed()) {
+                if (interstitialAd != null) {
+                    interstitialAd.show(MainActivity.this);
+                } else {
+                    loadInterstitialAd();
+                }
             }
         });
     }

@@ -59,9 +59,9 @@ public class MainActivity extends AppCompatActivity {
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
 
-        // Optimasi Warna Latar Belakang & Hardware Acceleration
-        webView.setBackgroundColor(Color.parseColor("#0f172a")); 
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);    
+        // Kunci warna latar belakang WebView ke warna gelap game (#0b0f19)
+        webView.setBackgroundColor(Color.parseColor("#0b0f19"));
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -77,12 +77,12 @@ public class MainActivity extends AppCompatActivity {
         webView.addJavascriptInterface(this, "AndroidApp");
 
         webView.setWebChromeClient(new WebChromeClient());
-        
+
+        // Tunggal WebViewClient (Menggabungkan kontrol URL, ProgressBar, dan Halaman Error Offline)
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                // Mencakup .com, .co.id, dan redirect regional Blogger lainnya
                 if (url.contains("gamenumerasi.blogspot.")) {
                     return false;
                 }
@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
                     String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-                            + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0f172a;}"
+                            + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
                             + "img{max-width:80%;height:auto;}</style></head>"
                             + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
                     
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- MANAGEMENT LIFECYCLE (Mencegah Memory Leak & Crash) ---
+    // --- MANAGEMENT LIFECYCLE ---
     @Override
     protected void onPause() {
         if (adView != null) {

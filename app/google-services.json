@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "229184820661",
+    "firebase_url": "https://numerasi-49bb2-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "numerasi-49bb2",
+    "storage_bucket": "numerasi-49bb2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:229184820661:android:37763fe8a25090f70cf5fc",
+        "android_client_info": {
+          "package_name": "com.numerasiapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjdc1M1WJwH_0Ofl2CT5M4rOpryAXybXw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

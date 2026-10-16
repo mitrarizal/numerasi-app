@@ -33,10 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
-    // Status loading untuk mencegah multiple request ke AdMob
     private boolean isInterstitialLoading = false;
-
-    // ID Unit Iklan Interstitial
     private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
 
     @Override
@@ -59,10 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
-
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
-        
-        // Gunakan LAYER_TYPE_SOFTWARE agar Canvas Confetti & WebView tidak crash GPU
         webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         WebSettings webSettings = webView.getSettings();
@@ -121,7 +115,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            // Pemulihan otomatis jika proses renderer WebView mengalami crash
             @Override
             public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
                 if (webView != null) {
@@ -135,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
 
         webView.loadUrl("https://gamenumerasi.blogspot.com");
 
-        // Penanganan Tombol Kembali Modern (Android X)
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -148,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // --- LOGIKA IKLAN INTERSTITIAL ---
     private void loadInterstitialAd() {
         if (isInterstitialLoading || interstitialAd != null) {
             return;
@@ -186,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
             });
     }
 
-    // Dipanggil dari JavaScript Blogspot
     @JavascriptInterface
     public void panggilIklanInterstisial() {
         runOnUiThread(() -> {
@@ -205,9 +195,7 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.pause();
         }
-        if (webView != null) {
-            webView.onPause();
-        }
+        // Hapus webView.onPause() agar kanvas HTML5/JavaScript tidak terbekukan
         super.onPause();
     }
 
@@ -217,9 +205,7 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.resume();
         }
-        if (webView != null) {
-            webView.onResume();
-        }
+        // Hapus webView.onResume() agar tidak memicu proses redraw visual
     }
 
     @Override

@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.numerasiapp'
+    namespace 'com.game.sos'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.numerasiapp"
+        applicationId "com.game.sos"
         minSdk 24
         targetSdk 34
         versionCode 2
@@ -44,15 +44,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'com.google.android.gms:play-services-ads:23.0.0'
 
-    // Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:35.0.1')
+    // Menggunakan Firebase BoM versi stabil (v32.8.1) yang aman untuk Java & tanpa DataStore
+    implementation platform('com.google.firebase:firebase-bom:32.8.1')
     implementation 'com.google.firebase:firebase-analytics'
-
-    // Standard Library Kotlin (Mencegah error NoClassDefFoundError pada delegasi DataStore)
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
-
-    // DataStore Preferences
-    implementation 'androidx.datastore:datastore-preferences:1.1.1'
-    implementation 'androidx.datastore:datastore-preferences-core:1.1.1'
-    implementation 'androidx.datastore:datastore-core:1.1.1'
 }

@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
 
     // ID Iklan Uji Coba AdMob
-    private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712";
+    private static final String TEST_INTERSTITIAL_ID = "ca-app-pub-6983364109428063/3679555743";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

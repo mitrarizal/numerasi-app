@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // KUNCI 1: Ubah Window Background aplikasi ke #0b0f19 agar TIDAK ADA layar putih saat loading/kirim jawaban
+        // KUNCI 1: Ubah Window Background aplikasi ke #0b0f19
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#0b0f19")));
 
         setContentView(R.layout.activity_main);
@@ -64,9 +64,10 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webview);
         
         webView.setVisibility(View.VISIBLE);
-        // KUNCI 2: Gunakan LAYER_TYPE_HARDWARE untuk performa smooth HTML5 Canvas
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        webView.setBackgroundColor(Color.parseColor("#0b0f19"));
+        
+        // KUNCI 2: Set layer ke NONE dan background WebView ke TRANSPARENT
+        webView.setLayerType(View.LAYER_TYPE_NONE, null);
+        webView.setBackgroundColor(Color.TRANSPARENT);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);

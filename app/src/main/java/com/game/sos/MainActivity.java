@@ -2,6 +2,7 @@ package com.numerasiapp;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -40,6 +41,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // KUNCI 1: Ubah Window Background aplikasi ke #0b0f19 agar TIDAK ADA layar putih saat loading/kirim jawaban
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#0b0f19")));
+
         setContentView(R.layout.activity_main);
 
         progressBar = findViewById(R.id.progressBar);
@@ -58,9 +63,9 @@ public class MainActivity extends AppCompatActivity {
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
         
-        // Pastikan WebView langsung terlihat
         webView.setVisibility(View.VISIBLE);
-        webView.setLayerType(View.LAYER_TYPE_NONE, null);
+        // KUNCI 2: Gunakan LAYER_TYPE_HARDWARE untuk performa smooth HTML5 Canvas
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
 
         WebSettings webSettings = webView.getSettings();
@@ -74,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
-        // Aktifkan Cookie untuk menyimpan status/session game
+        // Aktifkan Cookie
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -84,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         webView.addJavascriptInterface(this, "AndroidApp");
 
-        // Kelola ProgressBar
+        // Progress bar
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -102,12 +107,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                // Izinkan semua URL yang mengarah ke blogspot untuk dibuka di dalam WebView
-                if (url.contains("gamenumerasi.blogspot.com") || url.contains("blogspot.com")) {
-                    return false; // Memuat URL dalam WebView
-                }
-                return false; // Tetap izinkan navigasi internal
+                return false; // Mengizinkan semua navigasi di dalam WebView tanpa memicu browser eksternal
             }
 
             @Override
@@ -132,7 +132,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Muat halaman utama
         webView.loadUrl("https://gamenumerasi.blogspot.com");
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {

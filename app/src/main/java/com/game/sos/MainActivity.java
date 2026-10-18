@@ -40,11 +40,10 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
-    // Pemantau Jaringan Internet
     private ConnectivityManager connectivityManager;
     private ConnectivityManager.NetworkCallback networkCallback;
     private AlertDialog offlineDialog;
-    private boolean isOfflineState = false; // Mencegah reload berulang yang bikin kedap-kedip
+    private boolean isOfflineState = false;
 
     private boolean isInterstitialLoading = false;
     private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
@@ -53,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. Mencegah Layar Putih saat awal membuka aplikasi (Window Background Gelap)
+        // 1. Paksa Window background Android menjadi gelap total #0b0f19
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#0b0f19")));
 
         setContentView(R.layout.activity_main);
@@ -61,25 +60,20 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        // 2. Inisialisasi SDK AdMob
         MobileAds.initialize(this, initializationStatus -> loadInterstitialAd());
 
-        // 3. Banner Ad
         adView = findViewById(R.id.adView);
         if (adView != null) {
             adView.loadAd(new AdRequest.Builder().build());
         }
 
-        // 4. Konfigurasi WebView Anti-Kedip & Anti-White Screen
         webView = findViewById(R.id.webview);
         
-        // PERBAIKAN UTAMA: Kunci background internal Chromium ke warna gelap (#0b0f19)
+        // 2. Kunci Background WebView
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
 
-        // Memaksa Hardware Acceleration GPU agar rendering animasi & canvas lancar
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        }
+        // 3. Matikan Layer Type Hardware eksternal yang memicu kedap-kedip canvas pada WebView
+        webView.setLayerType(View.LAYER_TYPE_NONE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -145,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // 5. Setup Listener Jaringan Realtime tanpa reload paksa
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network network) {
@@ -153,7 +146,6 @@ public class MainActivity extends AppCompatActivity {
                     if (offlineDialog != null && offlineDialog.isShowing()) {
                         offlineDialog.dismiss();
                     }
-                    // Hanya me-reload HANYA JIKA sebelumnya dalam kondisi offline
                     if (isOfflineState && webView != null) {
                         isOfflineState = false;
                         webView.loadUrl("https://gamenumerasi.blogspot.com");
@@ -170,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        // Cek koneksi di awal
         if (!isInternetAvailable()) {
             isOfflineState = true;
             showOfflinePage(webView);
@@ -180,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
             webView.loadUrl("https://gamenumerasi.blogspot.com");
         }
 
-        // Penanganan tombol kembali
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {

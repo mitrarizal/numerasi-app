@@ -1,7 +1,13 @@
 package com.numerasiapp;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -15,6 +21,7 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.ads.AdError;
@@ -33,31 +40,40 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
+    // Pemantau Jaringan Internet
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+    private AlertDialog offlineDialog;
+    private boolean isOfflineState = false; // Mencegah reload berulang yang bikin kedap-kedip
+
     private boolean isInterstitialLoading = false;
     private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1. Mencegah Layar Putih saat awal membuka aplikasi (Window Background Gelap)
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#0b0f19")));
+
         setContentView(R.layout.activity_main);
 
         progressBar = findViewById(R.id.progressBar);
+        connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        // 1. Inisialisasi SDK AdMob
-        MobileAds.initialize(this, initializationStatus -> {
-            loadInterstitialAd(); 
-        });
+        // 2. Inisialisasi SDK AdMob
+        MobileAds.initialize(this, initializationStatus -> loadInterstitialAd());
 
-        // 2. Banner Ad
+        // 3. Banner Ad
         adView = findViewById(R.id.adView);
         if (adView != null) {
             adView.loadAd(new AdRequest.Builder().build());
         }
 
-        // 3. Konfigurasi WebView
+        // 4. Konfigurasi WebView Anti-Kedip & Anti-White Screen
         webView = findViewById(R.id.webview);
-        webView.setBackgroundColor(Color.parseColor("#0b0f19"));
-        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        webView.setBackgroundColor(Color.TRANSPARENT);
+        webView.setLayerType(View.LAYER_TYPE_NONE, null); // Bebas dari kendala render GPU/CPU
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -107,11 +123,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
-                    String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-                            + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
-                            + "img{max-width:80%;height:auto;}</style></head>"
-                            + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
-                    view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
+                    isOfflineState = true;
+                    showOfflinePage(view);
                 }
             }
 
@@ -126,8 +139,42 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://gamenumerasi.blogspot.com");
+        // 5. Setup Listener Jaringan Realtime tanpa reload paksa
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                runOnUiThread(() -> {
+                    if (offlineDialog != null && offlineDialog.isShowing()) {
+                        offlineDialog.dismiss();
+                    }
+                    // Hanya me-reload HANYA JIKA sebelumnya dalam kondisi offline
+                    if (isOfflineState && webView != null) {
+                        isOfflineState = false;
+                        webView.loadUrl("https://gamenumerasi.blogspot.com");
+                    }
+                });
+            }
 
+            @Override
+            public void onLost(@NonNull Network network) {
+                runOnUiThread(() -> {
+                    isOfflineState = true;
+                    showOfflineDialog();
+                });
+            }
+        };
+
+        // Cek koneksi di awal
+        if (!isInternetAvailable()) {
+            isOfflineState = true;
+            showOfflinePage(webView);
+            showOfflineDialog();
+        } else {
+            isOfflineState = false;
+            webView.loadUrl("https://gamenumerasi.blogspot.com");
+        }
+
+        // Penanganan tombol kembali
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -138,6 +185,50 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void showOfflinePage(WebView view) {
+        String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
+                + "img{max-width:80%;height:auto;}</style></head>"
+                + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
+        view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
+    }
+
+    private void showOfflineDialog() {
+        if (offlineDialog != null && offlineDialog.isShowing()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Koneksi Internet Terputus");
+        builder.setMessage("Game ini memerlukan koneksi internet aktif untuk dimainkan.");
+        builder.setCancelable(false);
+        builder.setPositiveButton("Coba Lagi", (dialog, which) -> {
+            if (!isInternetAvailable()) {
+                showOfflineDialog();
+            } else {
+                dialog.dismiss();
+                if (webView != null) {
+                    isOfflineState = false;
+                    webView.loadUrl("https://gamenumerasi.blogspot.com");
+                }
+            }
+        });
+        builder.setNegativeButton("Keluar", (dialog, which) -> finish());
+
+        offlineDialog = builder.create();
+        offlineDialog.setCanceledOnTouchOutside(false);
+        offlineDialog.show();
+    }
+
+    private boolean isInternetAvailable() {
+        if (connectivityManager == null) return false;
+        Network network = connectivityManager.getActiveNetwork();
+        if (network == null) return false;
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+        return capabilities != null &&
+                (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
     }
 
     private void loadInterstitialAd() {
@@ -192,30 +283,42 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        if (adView != null) {
-            adView.pause();
+        if (adView != null) adView.pause();
+        // webView.onPause() sengaja tidak dipanggil agar game HTML5 tidak terbekukan/berkedip
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        // Hapus webView.onPause() agar kanvas HTML5/JavaScript tidak terbekukan
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (adView != null) {
-            adView.resume();
+        if (adView != null) adView.resume();
+        // webView.onResume() sengaja tidak dipanggil untuk mencegah re-draw visual
+
+        try {
+            NetworkRequest networkRequest = new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build();
+            connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        // Hapus webView.onResume() agar tidak memicu proses redraw visual
+
+        if (!isInternetAvailable()) {
+            isOfflineState = true;
+            showOfflinePage(webView);
+            showOfflineDialog();
+        }
     }
 
     @Override
     protected void onDestroy() {
-        if (adView != null) {
-            adView.destroy();
-        }
-        if (webView != null) {
-            webView.destroy();
-        }
+        if (adView != null) adView.destroy();
+        if (webView != null) webView.destroy();
         super.onDestroy();
     }
 }

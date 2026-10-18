@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -57,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
         
-        // FIX 1: Gunakan LAYER_TYPE_NONE agar rendering mengikuti hardware bawaan sistem secara mulus
+        // Pastikan WebView langsung terlihat
+        webView.setVisibility(View.VISIBLE);
         webView.setLayerType(View.LAYER_TYPE_NONE, null);
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
 
@@ -72,13 +74,17 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
+        // Aktifkan Cookie untuk menyimpan status/session game
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            cookieManager.setAcceptThirdPartyCookies(webView, true);
         }
 
         webView.addJavascriptInterface(this, "AndroidApp");
 
-        // FIX 2: Kelola ProgressBar dengan WebChromeClient tanpa mengganggu WebView
+        // Kelola ProgressBar
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -97,22 +103,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                if (url.contains("gamenumerasi.blogspot.com")) {
-                    return false;
+                // Izinkan semua URL yang mengarah ke blogspot untuk dibuka di dalam WebView
+                if (url.contains("gamenumerasi.blogspot.com") || url.contains("blogspot.com")) {
+                    return false; // Memuat URL dalam WebView
                 }
-                return true; 
-            }
-
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
-                // Dikosongkan agar tidak ada perubahan visibilitas dadakan
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                // FIX 3: Hapus webView.setVisibility(View.VISIBLE) di sini
+                return false; // Tetap izinkan navigasi internal
             }
 
             @Override
@@ -137,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Muat halaman utama
         webView.loadUrl("https://gamenumerasi.blogspot.com");
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {

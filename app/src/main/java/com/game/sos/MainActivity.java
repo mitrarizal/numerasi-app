@@ -72,7 +72,9 @@ public class MainActivity extends AppCompatActivity {
 
         // 4. Konfigurasi WebView Anti-Kedip & Anti-White Screen
         webView = findViewById(R.id.webview);
-        webView.setBackgroundColor(Color.TRANSPARENT);
+        
+        // PERBAIKAN UTAMA: Kunci background internal Chromium ke warna gelap (#0b0f19)
+        webView.setBackgroundColor(Color.parseColor("#0b0f19"));
 
         // Memaksa Hardware Acceleration GPU agar rendering animasi & canvas lancar
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -288,7 +290,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         if (adView != null) adView.pause();
-        // webView.onPause() sengaja tidak dipanggil agar game HTML5 tidak terbekukan/berkedip
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback);
         } catch (Exception e) {
@@ -301,7 +302,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (adView != null) adView.resume();
-        // webView.onResume() sengaja tidak dipanggil untuk mencegah re-draw visual
 
         try {
             NetworkRequest networkRequest = new NetworkRequest.Builder()

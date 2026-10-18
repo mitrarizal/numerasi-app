@@ -73,7 +73,11 @@ public class MainActivity extends AppCompatActivity {
         // 4. Konfigurasi WebView Anti-Kedip & Anti-White Screen
         webView = findViewById(R.id.webview);
         webView.setBackgroundColor(Color.TRANSPARENT);
-        webView.setLayerType(View.LAYER_TYPE_NONE, null); // Bebas dari kendala render GPU/CPU
+
+        // Memaksa Hardware Acceleration GPU agar rendering animasi & canvas lancar
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        }
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);

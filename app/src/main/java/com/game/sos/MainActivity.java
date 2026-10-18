@@ -134,16 +134,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Setup Network Callback untuk memantau koneksi secara realtime
+        // Setup Network Callback (DIUBAH: Tidak melakukan loadUrl ulang agar tidak kedap-kedip saat kirim jawaban)
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network network) {
                 runOnUiThread(() -> {
                     if (offlineDialog != null && offlineDialog.isShowing()) {
                         offlineDialog.dismiss();
-                    }
-                    if (webView != null) {
-                        webView.loadUrl("https://gamenumerasi.blogspot.com");
                     }
                 });
             }
@@ -202,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 dialog.dismiss();
                 if (webView != null) {
-                    webView.loadUrl("https://gamenumerasi.blogspot.com");
+                    webView.reload(); // Menggunakan reload() yang lebih aman daripada loadUrl dari awal
                 }
             }
         });
@@ -280,7 +277,6 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.pause();
         }
-        // Lepas callback saat aplikasi ditutup/diminimize untuk menghemat sumber daya
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback);
         } catch (Exception e) {
@@ -295,7 +291,6 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.resume();
         }
-        // Daftarkan ulang callback pemantau internet saat aplikasi dibuka kembali
         try {
             NetworkRequest networkRequest = new NetworkRequest.Builder()
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -305,7 +300,6 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        // Cek ulang koneksi ketika user kembali ke dalam game
         if (!isInternetAvailable()) {
             if (webView != null) {
                 showOfflinePage(webView);

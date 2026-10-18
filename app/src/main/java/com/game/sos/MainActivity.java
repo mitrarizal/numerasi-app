@@ -2,11 +2,9 @@ package com.numerasiapp;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -41,10 +39,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // KUNCI 1: Ubah Window Background aplikasi ke #0b0f19
-        getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#0b0f19")));
-
         setContentView(R.layout.activity_main);
 
         progressBar = findViewById(R.id.progressBar);
@@ -62,12 +56,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
-        
-        webView.setVisibility(View.VISIBLE);
-        
-        // KUNCI 2: Set layer ke NONE dan background WebView ke TRANSPARENT
-        webView.setLayerType(View.LAYER_TYPE_NONE, null);
-        webView.setBackgroundColor(Color.TRANSPARENT);
+        webView.setBackgroundColor(Color.parseColor("#0b0f19"));
+        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -80,35 +70,38 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
-        // Aktifkan Cookie
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.setAcceptCookie(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-            cookieManager.setAcceptThirdPartyCookies(webView, true);
         }
 
         webView.addJavascriptInterface(this, "AndroidApp");
-
-        // Progress bar
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onProgressChanged(WebView view, int newProgress) {
-                if (progressBar != null) {
-                    if (newProgress < 100) {
-                        progressBar.setVisibility(View.VISIBLE);
-                        progressBar.setProgress(newProgress);
-                    } else {
-                        progressBar.setVisibility(View.GONE);
-                    }
-                }
-            }
-        });
+        webView.setWebChromeClient(new WebChromeClient());
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false; // Mengizinkan semua navigasi di dalam WebView tanpa memicu browser eksternal
+                String url = request.getUrl().toString();
+                if (url.contains("gamenumerasi.blogspot.com")) {
+                    return false;
+                }
+                return true; 
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                webView.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -202,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.pause();
         }
+        // Hapus webView.onPause() agar kanvas HTML5/JavaScript tidak terbekukan
         super.onPause();
     }
 
@@ -211,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.resume();
         }
+        // Hapus webView.onResume() agar tidak memicu proses redraw visual
     }
 
     @Override

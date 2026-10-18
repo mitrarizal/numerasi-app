@@ -59,10 +59,10 @@ public class MainActivity extends AppCompatActivity {
             adView.loadAd(new AdRequest.Builder().build());
         }
 
-        // 3. Konfigurasi WebView
+        // 3. Konfigurasi WebView (Diubah ke HARDWARE untuk performa game yang mulus & bebas kedap-kedip)
         webView = findViewById(R.id.webview);
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
-        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);

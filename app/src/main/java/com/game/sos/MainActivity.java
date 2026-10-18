@@ -1,7 +1,10 @@
 package com.numerasiapp;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -15,6 +18,7 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.ads.AdError;
@@ -33,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
+    private AlertDialog offlineDialog;
     private boolean isInterstitialLoading = false;
     private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
 
@@ -107,11 +112,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
-                    String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-                            + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
-                            + "img{max-width:80%;height:auto;}</style></head>"
-                            + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
-                    view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
+                    showOfflinePage(view);
+                    showOfflineDialog();
                 }
             }
 
@@ -126,7 +128,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://gamenumerasi.blogspot.com");
+        // Cek kondisi awal saat aplikasi dibuka
+        if (!isInternetAvailable()) {
+            showOfflinePage(webView);
+            showOfflineDialog();
+        } else {
+            webView.loadUrl("https://gamenumerasi.blogspot.com");
+        }
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -138,6 +146,53 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    // Fungsi menampilkan halaman gambar offline
+    private void showOfflinePage(WebView view) {
+        String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
+                + "img{max-width:80%;height:auto;}</style></head>"
+                + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
+        view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
+    }
+
+    // Fungsi Dialog Peringatan Pengunci (Tidak bisa ditutup user sembarangan)
+    private void showOfflineDialog() {
+        if (offlineDialog != null && offlineDialog.isShowing()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Koneksi Internet Terputus");
+        builder.setMessage("Game ini memerlukan koneksi internet aktif untuk dapat dimainkan.");
+        builder.setCancelable(false);
+        builder.setPositiveButton("Coba Lagi", (dialog, which) -> {
+            if (!isInternetAvailable()) {
+                showOfflineDialog();
+            } else {
+                dialog.dismiss();
+                if (webView != null) {
+                    webView.loadUrl("https://gamenumerasi.blogspot.com");
+                }
+            }
+        });
+        builder.setNegativeButton("Keluar", (dialog, which) -> finish());
+
+        offlineDialog = builder.create();
+        offlineDialog.setCanceledOnTouchOutside(false);
+        offlineDialog.show();
+    }
+
+    // Fungsi Pengecek Jaringan Fisik yang Aman
+    private boolean isInternetAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
+        android.net.Network network = cm.getActiveNetwork();
+        if (network == null) return false;
+        NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
+        return capabilities != null &&
+                (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
     }
 
     private void loadInterstitialAd() {
@@ -195,7 +250,6 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.pause();
         }
-        // Hapus webView.onPause() agar kanvas HTML5/JavaScript tidak terbekukan
         super.onPause();
     }
 
@@ -205,7 +259,14 @@ public class MainActivity extends AppCompatActivity {
         if (adView != null) {
             adView.resume();
         }
-        // Hapus webView.onResume() agar tidak memicu proses redraw visual
+
+        // Cek ulang koneksi ketika user kembali masuk ke aplikasi
+        if (!isInternetAvailable()) {
+            if (webView != null) {
+                showOfflinePage(webView);
+            }
+            showOfflineDialog();
+        }
     }
 
     @Override

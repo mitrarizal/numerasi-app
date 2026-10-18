@@ -1,10 +1,7 @@
 package com.numerasiapp;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.net.ConnectivityManager;
-import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -18,7 +15,6 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.ads.AdError;
@@ -37,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
     private InterstitialAd interstitialAd;
     private ProgressBar progressBar;
 
-    private AlertDialog offlineDialog;
     private boolean isInterstitialLoading = false;
     private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
 
@@ -59,10 +54,12 @@ public class MainActivity extends AppCompatActivity {
             adView.loadAd(new AdRequest.Builder().build());
         }
 
-        // 3. Konfigurasi WebView (Diubah ke HARDWARE untuk performa game yang mulus & bebas kedap-kedip)
+        // 3. Konfigurasi WebView
         webView = findViewById(R.id.webview);
+        
+        // FIX 1: Gunakan LAYER_TYPE_NONE agar rendering mengikuti hardware bawaan sistem secara mulus
+        webView.setLayerType(View.LAYER_TYPE_NONE, null);
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -80,7 +77,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
         webView.addJavascriptInterface(this, "AndroidApp");
-        webView.setWebChromeClient(new WebChromeClient());
+
+        // FIX 2: Kelola ProgressBar dengan WebChromeClient tanpa mengganggu WebView
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                if (progressBar != null) {
+                    if (newProgress < 100) {
+                        progressBar.setVisibility(View.VISIBLE);
+                        progressBar.setProgress(newProgress);
+                    } else {
+                        progressBar.setVisibility(View.GONE);
+                    }
+                }
+            }
+        });
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -95,25 +106,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
-                if (progressBar != null) {
-                    progressBar.setVisibility(View.VISIBLE);
-                }
+                // Dikosongkan agar tidak ada perubahan visibilitas dadakan
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                if (progressBar != null) {
-                    progressBar.setVisibility(View.GONE);
-                }
-                webView.setVisibility(View.VISIBLE);
+                // FIX 3: Hapus webView.setVisibility(View.VISIBLE) di sini
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
-                    showOfflinePage(view);
-                    showOfflineDialog();
+                    String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                            + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
+                            + "img{max-width:80%;height:auto;}</style></head>"
+                            + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
+                    view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
                 }
             }
 
@@ -128,13 +137,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Cek kondisi awal saat aplikasi dibuka
-        if (!isInternetAvailable()) {
-            showOfflinePage(webView);
-            showOfflineDialog();
-        } else {
-            webView.loadUrl("https://gamenumerasi.blogspot.com");
-        }
+        webView.loadUrl("https://gamenumerasi.blogspot.com");
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -146,53 +149,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    // Fungsi menampilkan halaman gambar offline
-    private void showOfflinePage(WebView view) {
-        String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-                + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
-                + "img{max-width:80%;height:auto;}</style></head>"
-                + "<body><img src='file:///android_asset/no_internet.png'></body></html>";
-        view.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
-    }
-
-    // Fungsi Dialog Peringatan Pengunci (Tidak bisa ditutup user sembarangan)
-    private void showOfflineDialog() {
-        if (offlineDialog != null && offlineDialog.isShowing()) return;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Koneksi Internet Terputus");
-        builder.setMessage("Game ini memerlukan koneksi internet aktif untuk dapat dimainkan.");
-        builder.setCancelable(false);
-        builder.setPositiveButton("Coba Lagi", (dialog, which) -> {
-            if (!isInternetAvailable()) {
-                showOfflineDialog();
-            } else {
-                dialog.dismiss();
-                if (webView != null) {
-                    webView.loadUrl("https://gamenumerasi.blogspot.com");
-                }
-            }
-        });
-        builder.setNegativeButton("Keluar", (dialog, which) -> finish());
-
-        offlineDialog = builder.create();
-        offlineDialog.setCanceledOnTouchOutside(false);
-        offlineDialog.show();
-    }
-
-    // Fungsi Pengecek Jaringan Fisik yang Aman
-    private boolean isInternetAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (cm == null) return false;
-        android.net.Network network = cm.getActiveNetwork();
-        if (network == null) return false;
-        NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
-        return capabilities != null &&
-                (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
     }
 
     private void loadInterstitialAd() {
@@ -258,14 +214,6 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (adView != null) {
             adView.resume();
-        }
-
-        // Cek ulang koneksi ketika user kembali masuk ke aplikasi
-        if (!isInternetAvailable()) {
-            if (webView != null) {
-                showOfflinePage(webView);
-            }
-            showOfflineDialog();
         }
     }
 

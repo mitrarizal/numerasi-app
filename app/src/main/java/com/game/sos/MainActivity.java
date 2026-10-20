@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isOfflineState = false;
 
     private boolean isInterstitialLoading = false;
-    private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712";
+    private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

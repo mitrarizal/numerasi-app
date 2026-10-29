@@ -5,17 +5,18 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name="com.bilangannumerasiapp.MyApplication"
         android:allowBackup="true"
-        android:label="Numerasi Championship"
         android:icon="@drawable/ic_launcher"
+        android:label="Operasi Hitung Championship"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:theme="@style/AppTheme">
 
-        <!-- Test App ID AdMob -->
+        <!-- ID Aplikasi AdMob Utama -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-6983364109428063~6601977411"/>
+            android:value="ca-app-pub-6983364109428063~5433371566" />
 
         <activity
             android:name=".MainActivity"

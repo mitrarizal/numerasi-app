@@ -212,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                     currentNativeAd = nativeAd;
 
                     NativeAdView adView = (NativeAdView) getLayoutInflater()
-                            .inflate(R.layout.my_native_ad_view, nativeAdContainer, false);
+                            .inflate(R.layout.native_ad_layout, nativeAdContainer, false);
                     populateNativeAdView(nativeAd, adView);
 
                     nativeAdContainer.removeAllViews();
@@ -399,6 +399,19 @@ public class MainActivity extends AppCompatActivity {
             isOfflineState = true;
             showOfflinePage(webView);
             showOfflineDialog();
+        } else if (isOfflineState) {
+            if (offlineDialog != null && offlineDialog.isShowing()) {
+                offlineDialog.dismiss();
+            }
+            isOfflineState = false;
+            if (webView != null) {
+                webView.loadUrl("https://gamenumerasi.blogspot.com");
+            }
+            if (currentNativeAd != null) {
+                nativeAdContainer.setVisibility(View.VISIBLE);
+            } else {
+                loadNativeAd();
+            }
         }
     }
 

@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
         progressBar = findViewById(R.id.progressBar);
         nativeAdContainer = findViewById(R.id.nativeAdContainer);
+        nativeAdContainer.setVisibility(View.GONE);
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
         MobileAds.initialize(this, initializationStatus -> {
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView = findViewById(R.id.webview);
-        
+
         // 2. Kunci Background WebView
         webView.setBackgroundColor(Color.parseColor("#0b0f19"));
 
@@ -109,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                 if (url.contains("gamenumerasi.blogspot.com")) {
                     return false;
                 }
-                return true; 
+                return true;
             }
 
             @Override
@@ -158,6 +159,11 @@ public class MainActivity extends AppCompatActivity {
                     if (isOfflineState && webView != null) {
                         isOfflineState = false;
                         webView.loadUrl("https://gamenumerasi.blogspot.com");
+                        if (currentNativeAd != null) {
+                            nativeAdContainer.setVisibility(View.VISIBLE);
+                        } else {
+                            loadNativeAd();
+                        }
                     }
                 });
             }
@@ -166,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
             public void onLost(@NonNull Network network) {
                 runOnUiThread(() -> {
                     isOfflineState = true;
+                    nativeAdContainer.setVisibility(View.GONE);
                     showOfflineDialog();
                 });
             }
@@ -204,16 +211,21 @@ public class MainActivity extends AppCompatActivity {
                     }
                     currentNativeAd = nativeAd;
 
-                    NativeAdView adView = (NativeAdView) getLayoutInflater().inflate(R.layout.native_ad_layout, null);
+                    NativeAdView adView = (NativeAdView) getLayoutInflater()
+                            .inflate(R.layout.my_native_ad_view, nativeAdContainer, false);
                     populateNativeAdView(nativeAd, adView);
 
                     nativeAdContainer.removeAllViews();
                     nativeAdContainer.addView(adView);
+                    if (!isOfflineState) {
+                        nativeAdContainer.setVisibility(View.VISIBLE);
+                    }
                 })
                 .withAdListener(new com.google.android.gms.ads.AdListener() {
                     @Override
                     public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        // Penanganan ketika gagal memuat iklan
+                        nativeAdContainer.removeAllViews();
+                        nativeAdContainer.setVisibility(View.GONE);
                     }
                 })
                 .withNativeAdOptions(new NativeAdOptions.Builder().build())
@@ -228,35 +240,42 @@ public class MainActivity extends AppCompatActivity {
         adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
         adView.setIconView(adView.findViewById(R.id.ad_app_icon));
 
-        if (nativeAd.getHeadline() != null) {
+        if (nativeAd.getHeadline() != null && adView.getHeadlineView() != null) {
             ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
         }
 
-        if (nativeAd.getBody() == null) {
-            adView.getBodyView().setVisibility(View.INVISIBLE);
-        } else {
-            adView.getBodyView().setVisibility(View.VISIBLE);
-            ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+        if (adView.getBodyView() != null) {
+            if (nativeAd.getBody() == null) {
+                adView.getBodyView().setVisibility(View.GONE);
+            } else {
+                adView.getBodyView().setVisibility(View.VISIBLE);
+                ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+            }
         }
 
-        if (nativeAd.getCallToAction() == null) {
-            adView.getCallToActionView().setVisibility(View.INVISIBLE);
-        } else {
-            adView.getCallToActionView().setVisibility(View.VISIBLE);
-            ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        if (adView.getCallToActionView() != null) {
+            if (nativeAd.getCallToAction() == null) {
+                adView.getCallToActionView().setVisibility(View.GONE);
+            } else {
+                adView.getCallToActionView().setVisibility(View.VISIBLE);
+                ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+            }
         }
 
-        if (nativeAd.getIcon() == null) {
-            adView.getIconView().setVisibility(View.GONE);
-        } else {
-            ((ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
-            adView.getIconView().setVisibility(View.VISIBLE);
+        if (adView.getIconView() != null) {
+            if (nativeAd.getIcon() == null) {
+                adView.getIconView().setVisibility(View.GONE);
+            } else {
+                ((ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
+                adView.getIconView().setVisibility(View.VISIBLE);
+            }
         }
 
         adView.setNativeAd(nativeAd);
     }
 
     private void showOfflinePage(WebView view) {
+        nativeAdContainer.setVisibility(View.GONE);
         String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
                 + "<style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#0b0f19;}"
                 + "img{max-width:80%;height:auto;}</style></head>"
@@ -279,6 +298,7 @@ public class MainActivity extends AppCompatActivity {
                 if (webView != null) {
                     isOfflineState = false;
                     webView.loadUrl("https://gamenumerasi.blogspot.com");
+                    loadNativeAd();
                 }
             }
         });
@@ -313,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onAdLoaded(@NonNull InterstitialAd ad) {
                     interstitialAd = ad;
                     isInterstitialLoading = false;
-                    
+
                     interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                         @Override
                         public void onAdDismissedFullScreenContent() {
@@ -352,6 +372,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        if (webView != null) webView.onPause();
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback);
         } catch (Exception e) {
@@ -363,6 +384,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (webView != null) webView.onResume();
 
         try {
             NetworkRequest networkRequest = new NetworkRequest.Builder()
@@ -382,10 +404,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        nativeAdContainer.removeAllViews();
         if (currentNativeAd != null) {
             currentNativeAd.destroy();
         }
-        if (webView != null) webView.destroy();
+        if (webView != null) {
+            webView.destroy();
+        }
         super.onDestroy();
     }
 }

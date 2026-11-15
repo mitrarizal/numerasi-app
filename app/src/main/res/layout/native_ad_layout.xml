@@ -79,7 +79,7 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <!-- Tombol CTA ringkas dengan marginTop 12dp agar tidak bertabrakan dengan ikon AdChoices di pojok kanan atas -->
+        <!-- Tombol CTA ringkas dengan padding atas/bawah 0dp agar teks tampil utuh di tengah -->
         <Button
             android:id="@+id/ad_call_to_action"
             android:layout_width="wrap_content"
@@ -87,12 +87,16 @@
             android:layout_marginStart="6dp"
             android:layout_marginTop="12dp"
             android:backgroundTint="#16A34A"
+            android:gravity="center"
+            android:includeFontPadding="false"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:paddingStart="10dp"
+            android:paddingTop="0dp"
             android:paddingEnd="10dp"
+            android:paddingBottom="0dp"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
             android:textStyle="bold" />

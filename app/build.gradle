@@ -11,8 +11,8 @@ android {
         applicationId "com.numerasiapp"
         minSdk 24
         targetSdk 36
-        versionCode 8 // Dinaikkan dari 2 agar Play Console menerima file rilis baru
-        versionName "1.7"
+        versionCode 9 // Dinaikkan dari 2 agar Play Console menerima file rilis baru
+        versionName "1.8"
     }
 
     signingConfigs {

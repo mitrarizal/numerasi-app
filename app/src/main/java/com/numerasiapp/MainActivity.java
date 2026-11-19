@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-6983364109428063/3679555743";
     private static final String NATIVE_AD_UNIT_ID = "ca-app-pub-6983364109428063/5305766094";
-    private static final String GAME_URL = "https://gamenumerasi.blogspot.com";
+    private static final String GAME_URL = "https://gamenumerasi.blogspot.com/?m=1";
 
     private final Runnable retryNativeAdRunnable = this::loadNativeAd;
 

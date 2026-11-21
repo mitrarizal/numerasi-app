@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0b0f19"
-    android:fitsSystemWindows="true">
+    android:background="#F0F9FF"
+    android:orientation="vertical">
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
-
+    <!-- WebView Game (Otomatis menyesuaikan tinggi saat Native Ad tampil di bawah) -->
     <WebView
-        android:id="@+id/webview"
+        android:id="@+id/game_webview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/nativeAdContainer"
-        android:background="#0b0f19" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
+    <!-- Kontainer Native Advanced (Hanya tampil di Layar Home saat setGameplayState(false)) -->
     <FrameLayout
-        android:id="@+id/nativeAdContainer"
+        android:id="@+id/native_ad_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:background="#111827"
+        android:background="#E2E8F0"
+        android:paddingStart="10dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="10dp"
         android:visibility="gone" />
 
-</RelativeLayout>
+</LinearLayout>

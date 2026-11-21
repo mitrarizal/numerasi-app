@@ -30,7 +30,7 @@
         <!-- ID Aplikasi Google AdMob (Ganti ID Test ini dengan ID Produksi Anda sebelum rilis) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-6983364109428063~6601977411" />
 
         <!-- Tunda inisialisasi pengukuran SDK sampai AdManager menerapkan tag Child-Directed (COPPA/G) -->
         <meta-data

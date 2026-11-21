@@ -6,10 +6,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- WAJIB KEBIJAKAN FAMILIES: Hapus izin Advertising ID (AD_ID) yang disuntikkan SDK -->
-    <uses-permission
-        android:name="com.google.android.gms.permission.AD_ID"
-        tools:node="remove" />
+    <!-- Izin Advertising ID (Sinkron dengan opsi "Ya" di Play Console) -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <application
         android:allowBackup="true"
@@ -21,26 +19,26 @@
         android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"
         android:usesCleartextTraffic="false">
 
-        <!-- Resolusi konflik Manifest Merger antara AdMob SDK (23.6.0) dan Firebase Analytics -->
+        <!-- Resolusi konflik Manifest Merger antara AdMob SDK dan Firebase Analytics -->
         <property
             android:name="android.adservices.AD_SERVICES_CONFIG"
             android:resource="@xml/gma_ad_services_config"
             tools:replace="android:resource" />
 
-        <!-- ID Aplikasi Google AdMob (Ganti ID Test ini dengan ID Produksi Anda sebelum rilis) -->
+        <!-- ID Aplikasi Google AdMob -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-6983364109428063~6601977411" />
 
-        <!-- Tunda inisialisasi pengukuran SDK sampai AdManager menerapkan tag Child-Directed (COPPA/G) -->
+        <!-- Tunda inisialisasi pengukuran SDK sampai AdManager mengatur tag usia -->
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
 
-        <!-- Nonaktifkan pengumpulan AD_ID pada Firebase Analytics agar patuh Google Play Families -->
+        <!-- Izinkan pengumpulan AD_ID sesuai pernyataan "Ya" -->
         <meta-data
             android:name="google_analytics_adid_collection_enabled"
-            android:value="false" />
+            android:value="true" />
 
         <!-- Deklarasi Aktivitas Utama Game -->
         <activity

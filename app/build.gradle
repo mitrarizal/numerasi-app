@@ -11,8 +11,8 @@ android {
         applicationId "com.numerasiapp"
         minSdk 24
         targetSdk 36
-        versionCode 11 // Dinaikkan dari 2 agar Play Console menerima file rilis baru
-        versionName "1.10"
+        versionCode 11 // Naikkan angka ini setiap kali mengunggah AAB baru ke Play Console
+        versionName "1.0.10"
     }
 
     signingConfigs {
@@ -27,8 +27,8 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled true // Mengaktifkan R8 compiler, obfuscation, dan pengoptimalan DEX
-            shrinkResources true // Menghapus resource/asset yang tidak digunakan
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -40,11 +40,17 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation 'com.google.android.gms:play-services-ads:23.0.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.activity:activity:1.9.3'
+    implementation 'com.google.android.material:material:1.12.0'
 
-    // Firebase BoM v32.8.0 (Aman untuk Java murni)
-    implementation platform('com.google.firebase:firebase-bom:32.8.0')
+    // Wajib untuk ProcessLifecycleOwner & DefaultLifecycleObserver (App Open Ad)
+    implementation 'androidx.lifecycle:lifecycle-process:2.8.7'
+
+    // Google Mobile Ads SDK (App Open, Native Advanced, Interstitial)
+    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+
+    // Firebase BoM (Kompatibel dengan Java & kebijakan Families)
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
     implementation 'com.google.firebase:firebase-analytics'
 }

@@ -38,9 +38,9 @@ public class AdManager implements DefaultLifecycleObserver {
 
     // Ganti dengan Unit ID Produksi AdMob Anda sebelum rilis ke Google Play Store
     // Fokus hanya pada 3 format: App Open, Native Advanced, dan Interstitial
-    private static final String AD_UNIT_APP_OPEN = "ca-app-pub-3940256099942544/9257395921";
-    private static final String AD_UNIT_NATIVE = "ca-app-pub-3940256099942544/2247696110";
-    private static final String AD_UNIT_INTERSTITIAL = "ca-app-pub-3940256099942544/1033173712";
+    private static final String AD_UNIT_APP_OPEN = "ca-app-pub-6983364109428063/2562896106";
+    private static final String AD_UNIT_NATIVE = "ca-app-pub-6983364109428063/5305766094";
+    private static final String AD_UNIT_INTERSTITIAL = "ca-app-pub-6983364109428063/3679555743";
 
     // Batas waktu & jeda aman sesuai kebijakan frekuensi Google AdMob
     private static final long APP_OPEN_EXPIRY_MS = 4L * 3600L * 1000L; // 4 jam

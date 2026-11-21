@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Kepatuhan Edge-to-Edge wajib SDK 35/36 agar konten & Native Ad tidak terpotong poni layar.
+     * Kepatuhan Edge-to-Edge wajib SDK 35/36 agar konten dan Native Ad tidak terpotong poni layar.
      */
     private void configureEdgeToEdgeAndInsets() {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         if (controller != null) {
             controller.hide(WindowInsetsCompat.Type.systemBars());
             controller.setSystemBarsBehavior(
-                    WindowInsetsCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             );
         }
     }
